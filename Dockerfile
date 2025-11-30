@@ -59,6 +59,9 @@ RUN chown -R $UID:$GID /home/rosuser
 # Switch to non-root user
 USER rosuser
 
+# Install Jupyter kernel for the user (critical for VSCode/JupyterLab)
+RUN python -m ipykernel install --user --name=python3 --display-name="Python 3"
+
 CMD ["python", "src/main.py"]
 
 # docker compose build --no-cache
