@@ -21,9 +21,11 @@ services:
               capabilities: [gpu]
     ports:
       - "5678:5678"
+    # Note: repo_out and catkin_ws/src/repo_ros are pre-created in the image but not
+    # mounted here. They are mount targets for derived projects. The base image has
+    # everything COPYed at build time; no host bind mount is needed.
     volumes:
-      - ./:/home/rosuser/repo
-      - ${DATASET}:/home/rosuser/repo/dataset:rw
+      - ${DATASET_PATH}:/home/rosuser/dataset:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ${XAUTHORITY:-/run/user/1000/gdm/Xauthority}:/home/rosuser/.Xauthority:rw
     command: /bin/bash

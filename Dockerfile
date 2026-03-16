@@ -7,7 +7,7 @@ ARG GID=1000
 ENV PYTHONDONTWRITEBYTECODE=1
 # Turn off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
-ENV WORKSPACE=/home/rosuser/repo
+ENV WORKSPACE=/home/rosuser/repo_out
 
 # Fix locale configuration
 RUN apt-get update && apt-get install -y locales && \
@@ -55,6 +55,20 @@ fi
 
 # Set ownership and permissions
 RUN chown -R $UID:$GID /home/rosuser
+
+# Pre-create mount point directories with correct ownership
+# These directories serve as mount targets for derived projects' docker-compose volumes.
+# The base docker-compose.yml only mounts dataset; repo_out and catkin_ws/src/repo_ros
+# are mounted by derived projects (e.g., Docker_ROSnoetic_python3.11, Marine_postprocessing).
+# - repo_out/: py311/CV project code (primary workspace, already set via WORKSPACE env)
+# - catkin_ws/src/repo_ros/: ROS code (read-only cross-mount from ROS container)
+# - dataset/: shared data (mounted by base and derived compose files)
+RUN mkdir -p /home/rosuser/repo_out \
+             /home/rosuser/catkin_ws/src/repo_ros \
+             /home/rosuser/dataset \
+    && chown -R $UID:$GID /home/rosuser/repo_out \
+                          /home/rosuser/catkin_ws \
+                          /home/rosuser/dataset
 
 # Switch to non-root user
 USER rosuser

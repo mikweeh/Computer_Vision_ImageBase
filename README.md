@@ -1,4 +1,4 @@
-This system is a dockerized development system for computer vision applications.
+This system is a dockerized base image for computer vision applications.
 
 ## The environment inside
 
@@ -35,47 +35,27 @@ wandb==0.22.0
 You have to have at least cuda 12.4 to run it, and of course docker installed
 with the possibility of using GPU.
 
-## Folder Structure
+## Architecture
 
-Your development repo should have the following structure:
-```
-repo
-  |___ dataset
-  |___ src
-  |___ docker-compose.yml
-  |___ Dockerfile
-  |___ requirements.txt
-  |___ .env
-```
+This is a base image. All project code is COPYed into the image at build time — no
+host directory is bind-mounted for code. The working directory inside the container
+is `/home/rosuser/repo_out`.
 
-It may contain other folders or files, but this is the basic setup. Here is what
- each item is for:
-```
-`dataset`: Empty folder locally, mapped to the dataset specified in the DATASET_PATH environment variable
-`src`: Contains all project code.
-`docker-compose.yml`: The file used by docker compose to launch the system. Do not modify it.
-`Dockerfile`: The file that builds the image. Do not modify it.
-`requirements.txt`: Python requirements file. If you need more libraries, add them here.
-`.env`: The file where environment variables are defined.
-```
+The following directories are pre-created inside the image as mount targets for
+derived projects:
 
-## Initial Setup
+- `/home/rosuser/repo_out` — output workspace; derived projects mount their build artifacts here
+- `/home/rosuser/catkin_ws/src/repo_ros` — ROS package source mount point
+- `/home/rosuser/dataset` — dataset mount point
 
-To implement this setup in a new project, copy the following items to your project folder:
-
-- `docker-compose.yml`
-- `Dockerfile`
-- `requirements.txt`
-- Environment variables file `.env`
-- Empty folder named `dataset`
-- `src` folder for your code
+Derived projects' `docker-compose.yml` files bind-mount into these locations as needed.
 
 ## Environment Variables
 
-Configure the `.env` file with the following variables:
+Configure the `.env` file (use `dotenv.template` as a starting point) with the following variables:
 
 - `PROJECT_NAME`: Project name that determines the container name.
-- `DATASET`: Path where the dataset is stored on the host (e.g., `/home/azken/bagfiles/CABRERA`). It is mounted in the container as read/write bind mount, so that any changes you do are also done in the original folder outside the container.
+- `DATASET_PATH`: Path where the dataset is stored on the host (e.g., `/home/haddo/Datasets`). It is mounted at `/home/rosuser/dataset` inside the container as a read/write bind mount, so that any changes you make are also reflected in the original folder outside the container.
 - `CONTAINER_DISPLAY`: Value of the DISPLAY variable to export images
   - With AnyDesk or local: usually `:1` (or `:0`)
   - With SSH: Use the host IP address with the port you prefer from 15 to 50 (e.g., `172.XX.XX.XX:30`, example choosing port 30). Remember this choice.
@@ -89,19 +69,25 @@ To start the environment:
 $ docker compose up -d
 ```
 
-This creates the container. Your project folder is mounted at `/home/rosuser/repo` inside the container, and the dataset will be at `/home/rosuser/repo/dataset`. You can debug code step by step with VSCode.
+This creates the container. The dataset is available at `/home/rosuser/dataset` inside
+the container. You can debug code step by step with VSCode.
 
 To stop the environment:
 ```
 $ docker compose down -v
 ```
 
-When the system is stopped, the container is removed, but any changes made are
-preserved in the project folder on the host.
+When the system is stopped, the container is removed.
 
-If you run the example code at `src/main.py` you should see the figure created with matplotlib in the host screen (this implies that X11 forwarding is working)
+## Testing
 
-Or you can check if it works from outside the container by doing:
+A test script is provided at `tests/test_installation.sh`. Run it to verify that the
+image builds correctly and that GPU access and key libraries are working:
+```
+$ bash tests/test_installation.sh
+```
+
+You can also check manually from outside the container:
 ```
 # Check graphical forwarding
 docker compose exec dev_service xeyes

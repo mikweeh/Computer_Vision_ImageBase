@@ -181,3 +181,7 @@ imgs
 Checkpoint*/
 results
 .vscode
+
+# Claude Code configuration (per-user, not version-controlled)
+CLAUDE.md
+.claude/
